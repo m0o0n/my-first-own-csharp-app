@@ -3,7 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Marten" Version="8.1.0" />
+    <PackageVersion Include="Marten" Version="9.37.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
   </ItemGroup>
 </Project>
