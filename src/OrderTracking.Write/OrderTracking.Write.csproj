@@ -12,4 +12,8 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OrderTracking.Contracts\OrderTracking.Contracts.csproj" />
+  </ItemGroup>
+
 </Project>
