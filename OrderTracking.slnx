@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/OrderTracking.Contracts/OrderTracking.Contracts.csproj" />
     <Project Path="src/OrderTracking.Read/OrderTracking.Read.csproj" />
     <Project Path="src/OrderTracking.Write/OrderTracking.Write.csproj" />
   </Folder>
