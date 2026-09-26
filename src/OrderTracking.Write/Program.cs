@@ -1,4 +1,5 @@
 using Marten;
+using OrderTracking.Write.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,17 @@ builder.Services.AddMarten(options =>
 
 var app = builder.Build();
 
+
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    Console.WriteLine($"Application started on Port: {app.Environment.ApplicationName}");
+});
+
 app.MapGet("/", () => "Hello World!");
+
+PlaceOrder.MapEndpoints(app);
+PayOrder.MapEndpoints(app);
+ShipOrder.MapEndpoints(app);
+CancelOrder.MapEndpoints(app);
 
 app.Run();

@@ -76,25 +76,26 @@ OrderTracking.sln
 - [x] Postgres локально
 - [x] user-secrets с connection string
 - [x] .gitignore (bin/obj вне репо)
-- [ ] RabbitMQ в docker
-- [ ] Solution + 3 проекта (`Contracts`, `Write`, `Read`), текущий `MyApi` встраиваем как основу под `Write`
+- [x] RabbitMQ в docker
+- [x] Solution + 3 проекта (`Contracts`, `Write`, `Read`), текущий `MyApi` встроен как основа под `Write`
 
-### Фаза 1 — Голый Marten в Write: aggregate + events
+### Фаза 1 — Голый Marten в Write: aggregate + events ✅
 
 Цель: понять, как Marten хранит события и восстанавливает состояние из них.
 Шины пока нет — работаем только с `Write`-сервисом.
 
-- [ ] Подключить Marten в `OrderTracking.Write` (`AddMarten`, connection string из конфига)
-- [ ] `Contracts`: `Order` aggregate (класс с `Apply(...)` методами) + 4 события
-- [ ] Command-функции (пока без Wolverine, просто методы): `PlaceOrder`, `PayOrder`, `ShipOrder`, `CancelOrder`
-  - загрузить aggregate из event store
+- [x] Подключить Marten в `OrderTracking.Write` (`AddMarten`, connection string из конфига)
+- [x] `Contracts`: 4 события (`OrderPlaced`, `OrderPaid`, `OrderShipped`, `OrderCancelled`) + `OrderItem`
+- [x] `Write.Domain`: `Order` aggregate (класс с `Apply(...)` методами) + `OrderStatus`
+- [x] Command-функции: `PlaceOrder`, `PayOrder`, `ShipOrder`, `CancelOrder`
+  - загрузить aggregate через `FetchLatest`
   - проверить бизнес-правило (инвариант)
   - append нового события
   - `SaveChangesAsync`
-- [ ] Minimal API эндпоинты в `Write`, дёргающие эти команды
-- [ ] Проверка руками через `.http`: создать → оплатить → отгрузить → попытаться отменить (должно упасть с понятной ошибкой)
+- [x] Minimal API эндпоинты в `Write`, дёргающие эти команды
+- [x] Проверка руками через Postman/curl: создать → оплатить → отгрузить → попытаться отменить (упало с 400, событие не записалось)
 
-**Критерий готовности:** заказ проводится по всем статусам через HTTP, нарушение правила даёт ошибку, в таблице `mt_events` в Postgres видно все записанные события.
+**Критерий готовности достигнут:** заказ проводится по всем статусам через HTTP, нарушение правила даёт ошибку без записи, в `mt_events` видна вся история (подтверждено запросом к БД).
 
 ### Фаза 2 — Wolverine + RabbitMQ: публикация событий из Write
 
@@ -136,6 +137,18 @@ OrderTracking.sln
 
 - [ ] Unit-тесты на бизнес-правила aggregate (без БД, чистая логика)
 - [ ] Integration-тест на полный флоу Write→RabbitMQ→Read (Testcontainers: Postgres + RabbitMQ)
+
+### Фаза 7 (stretch goal) — Частичные платежи
+
+Цель: потренироваться расширять уже существующий функционал, не ломая пройденные фазы.
+
+Сейчас `OrderPaid` — разовый полный платёж (проверка `amount < TotalAmount` → reject, `>=` — проходит, переплата не блокируется). Частичные платежи — другая модель:
+
+- [ ] `Order` аккумулирует `PaidAmount` по всем `OrderPaid` событиям (`+=`, не `=`)
+- [ ] Переход в статус `Paid` — не в handler'е, а когда накопленная сумма `>= TotalAmount` (решение переезжает в `Apply` или в handler на основе пересчитанного состояния)
+- [ ] Подумать нужен ли промежуточный статус (`PartiallyPaid`) в `OrderStatus`
+- [ ] Как это скажется на `OrderSummary` read-model (Фаза 3) — показывать ли "оплачено X из Y"?
+- [ ] Что с уже созданными в БД событиями старого формата — ломающее изменение или aддитивное? (см. обсуждение про эволюцию схемы событий)
 
 ## Открытые вопросы / решить по ходу
 
