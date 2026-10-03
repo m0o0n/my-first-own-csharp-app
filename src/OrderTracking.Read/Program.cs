@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMarten(options =>
 {
     options.Connection(builder.Configuration["DB_URL"]!);
-    options.DatabaseSchemaName = "write_orders";
+    options.DatabaseSchemaName = "read_orders";
 });
 
 var app = builder.Build();
