@@ -3,6 +3,7 @@ namespace OrderTracking.Write.Features;
 using Marten;
 using OrderTracking.Contracts.Events;
 using OrderTracking.Write.Domain;
+using Wolverine;
 
 public record PlaceOrderRequest(
     Guid CustomerId,
@@ -16,7 +17,7 @@ public static class PlaceOrder
     {
         app.MapPost("/orders", Handle);
     }
-    public static async Task<IResult> Handle(PlaceOrderRequest payload, IDocumentSession session)
+    public static async Task<IResult> Handle(PlaceOrderRequest payload, IDocumentSession session, IMessageBus bus)
     {
 
         var orderId = Guid.NewGuid();
@@ -33,6 +34,7 @@ public static class PlaceOrder
 
         session.Events.StartStream<Order>(orderId, orderPlaced);
         await session.SaveChangesAsync();
+        await bus.PublishAsync(orderPlaced);
 
         return Results.Created($"/orders/{orderId}", new { orderId });
     }

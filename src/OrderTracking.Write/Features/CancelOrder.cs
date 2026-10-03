@@ -1,6 +1,7 @@
 using Marten;
 using OrderTracking.Contracts.Events;
 using OrderTracking.Write.Domain;
+using Wolverine;
 
 namespace OrderTracking.Write.Features;
 
@@ -11,7 +12,7 @@ public static class CancelOrder
         app.MapPost("/orders/{orderId:guid}/cancel", Handle);
     }
 
-    public static async Task<IResult> Handle(Guid orderId, IDocumentSession session)
+    public static async Task<IResult> Handle(Guid orderId, IDocumentSession session, IMessageBus bus)
     {
         var order = await session.Events.FetchLatest<Order>(orderId);
         if (order == null)
@@ -27,8 +28,8 @@ public static class CancelOrder
         var orderCancelled = new OrderCancelled(OrderId: orderId, CancelledAt: DateTimeOffset.UtcNow, Reason: "Cancelled by user request");
 
         session.Events.Append(orderId, orderCancelled);
-
         await session.SaveChangesAsync();
+        await bus.PublishAsync(orderCancelled);
 
         return Results.Ok();
     }

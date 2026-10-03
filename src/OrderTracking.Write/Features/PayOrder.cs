@@ -1,6 +1,7 @@
 using Marten;
 using OrderTracking.Contracts.Events;
 using OrderTracking.Write.Domain;
+using Wolverine;
 
 namespace OrderTracking.Write.Features;
 
@@ -14,7 +15,7 @@ public static class PayOrder
     }
 
 
-    public static async Task<IResult> Handle(Guid orderId, PayOrderRequest payload, IDocumentSession session)
+    public static async Task<IResult> Handle(Guid orderId, PayOrderRequest payload, IDocumentSession session, IMessageBus bus)
     {
         var order = await session.Events.FetchLatest<Order>(orderId);
         if (order == null)
@@ -35,8 +36,8 @@ public static class PayOrder
         var orderPaid = new OrderPaid(OrderId: orderId, PaidAt: DateTimeOffset.UtcNow, PaymentReference: Guid.NewGuid().ToString(), PaidAmount: payload.Amount);
 
         session.Events.Append(orderId, orderPaid);
-
         await session.SaveChangesAsync();
+        await bus.PublishAsync(orderPaid);
 
         return Results.Ok();
     }
