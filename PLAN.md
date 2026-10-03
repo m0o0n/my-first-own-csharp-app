@@ -97,16 +97,18 @@ OrderTracking.sln
 
 **Критерий готовности достигнут:** заказ проводится по всем статусам через HTTP, нарушение правила даёт ошибку без записи, в `mt_events` видна вся история (подтверждено запросом к БД).
 
-### Фаза 2 — Wolverine + RabbitMQ: публикация событий из Write
+### Фаза 2 — Wolverine + RabbitMQ: публикация событий из Write ✅
 
 Цель: пощупать саму шину — увидеть, как событие уходит в очередь.
 
-- [ ] Поднять RabbitMQ в docker, глянуть UI (localhost:15672)
-- [ ] Подключить Wolverine в `Write`, настроить `UseRabbitMq()`
-- [ ] После каждого успешного command handler — публиковать соответствующее событие в шину
-- [ ] Проверка руками: дергаем `Write` через `.http`, смотрим в RabbitMQ UI, что сообщение реально долетело до очереди
+- [x] Поднять RabbitMQ в docker, глянуть UI (localhost:15672)
+- [x] Подключить Wolverine в `Write` (`WolverineFx`, `WolverineFx.RabbitMQ`, `WolverineFx.RuntimeCompilation`), настроить `UseRabbitMq()` + `PublishAllMessages().ToRabbitExchange("orders")`
+- [x] После каждого успешного command handler (все 4) — публикация через `IMessageBus.PublishAsync`
+- [x] Проверка руками: временная очередь `orders-test`, забинженная на exchange `orders`, подтвердила что все 3-4 события реально долетают с полным JSON
 
-**Критерий готовности:** видно в RabbitMQ management UI, как после каждой команды прилетает сообщение — раньше чем есть кому его читать.
+**Критерий готовности достигнут.**
+
+**Известный technical debt (не блокер, но отметить):** `SaveChangesAsync()` и `PublishAsync()` — два отдельных нетранзакционных шага. Если процесс упадёт между ними — событие попадёт в `mt_events`, но не долетит до шины. Правильное решение — transactional outbox через `WolverineFx.Marten` (сообщение пишется в ту же Postgres-транзакцию). Рассмотреть отдельно, не блокирует переход к Фазе 3.
 
 ### Фаза 3 — Read-side: подписка + projections
 
