@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\OrderTracking.Contracts\OrderTracking.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
